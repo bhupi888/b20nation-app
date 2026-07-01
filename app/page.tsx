@@ -4,6 +4,7 @@ import { NAT20_ADDRESS, NAT20_ABI } from '@/lib/token'
 import { CLAIM_ADDRESS, CLAIM_ABI } from '@/lib/claim'
 import { formatUnits, formatEther } from 'viem'
 import { useEffect } from 'react'
+import { MintHistory } from './MintHistory'
 
 export default function Home() {
   const { address, isConnected } = useAccount()
@@ -18,7 +19,7 @@ export default function Home() {
 
   const { data: ethBalance } = useBalance({ address, query: { enabled: !!address } })
   const { data: hasClaimed, refetch: refetchClaimed } = useReadContract({ address: CLAIM_ADDRESS, abi: CLAIM_ABI, functionName: 'hasClaimed', args: address ? [address] : undefined, query: { enabled: !!address } })
-  const { data: totalClaims, refetch: refetchTotalClaims } = useReadContract({ address: CLAIM_ADDRESS, abi: CLAIM_ABI, functionName: 'totalClaims' })
+  const { data: totalClaims, refetch: refetchTotalClaims } = useReadContract({ address: CLAIM_ADDRESS, abi: CLAIM_ABI, functionName: 'totalClaims', query: { refetchInterval: 15000 } })
 
   const { writeContract, data: txHash, isPending, reset } = useWriteContract()
   const { data: receipt, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash })
@@ -107,6 +108,8 @@ export default function Home() {
             Connect Base Account
           </button>
         )}
+
+        <MintHistory />
       </main>
 
       {showModal && (
