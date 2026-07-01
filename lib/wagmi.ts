@@ -1,12 +1,13 @@
 import { http, createConfig } from 'wagmi'
 import { baseSepolia } from 'wagmi/chains'
-import { coinbaseWallet } from 'wagmi/connectors'
+import { coinbaseWallet } from '@wagmi/connectors'
 
 export const config = createConfig({
   chains: [baseSepolia],
+  ssr: true,
   connectors: [
     coinbaseWallet({
-      appName: 'BNOVA Token',
+      appName: 'B20Nation',
       preference: 'smartWalletOnly',
     }),
   ],
