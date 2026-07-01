@@ -4,6 +4,7 @@ import { NAT20_ADDRESS, NAT20_ABI } from '@/lib/token'
 import { CLAIM_ADDRESS, CLAIM_ABI } from '@/lib/claim'
 import { formatUnits, formatEther } from 'viem'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { MintHistory } from './MintHistory'
 
 // Creator's X profile — users are gated to follow this before minting unlocks.
@@ -45,6 +46,14 @@ export default function Home() {
     window.open(X_PROFILE_URL, '_blank', 'noopener,noreferrer')
     setFollowStep('verifying')
     setTimeout(() => setFollowStep('verified'), 5000)
+  }
+
+  // Open the X post composer pre-filled with a mint announcement.
+  const shareOnX = () => {
+    const url = typeof window !== 'undefined' ? window.location.origin : ''
+    const text = `I just minted a B20 token (NAT20) ${url} on Base Sepolia`
+    const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}`
+    window.open(intent, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -97,9 +106,23 @@ export default function Home() {
                 )}
 
                 {hasClaimed ? (
-                  <button disabled className="rounded-full bg-zinc-300 dark:bg-zinc-700 text-zinc-500 px-5 py-2 text-sm font-medium cursor-not-allowed">
-                    Already Minted
-                  </button>
+                  <>
+                    <button disabled className="rounded-full bg-zinc-300 dark:bg-zinc-700 text-zinc-500 px-5 py-2 text-sm font-medium cursor-not-allowed">
+                      Already Minted
+                    </button>
+                    <button
+                      onClick={shareOnX}
+                      className="rounded-full bg-black dark:bg-white text-white dark:text-black px-5 py-2 text-sm font-medium"
+                    >
+                      Share on X
+                    </button>
+                    <Link
+                      href="/launchpad"
+                      className="rounded-full bg-blue-600 text-white px-5 py-2 text-sm font-medium text-center"
+                    >
+                      🚀 Launch your own token
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <p className="text-xs text-zinc-500 text-center">
@@ -187,8 +210,20 @@ export default function Home() {
               </p>
             )}
             <button
+              onClick={shareOnX}
+              className="rounded-full bg-black dark:bg-white text-white dark:text-black px-6 py-2 text-sm font-medium mt-2 w-full"
+            >
+              Share on X
+            </button>
+            <Link
+              href="/launchpad"
+              className="rounded-full bg-blue-600 text-white px-6 py-2 text-sm font-medium w-full text-center"
+            >
+              🚀 Launch your own token
+            </Link>
+            <button
               onClick={() => reset()}
-              className="rounded-full bg-black dark:bg-white text-white dark:text-black px-6 py-2 text-sm font-medium mt-2"
+              className="rounded-full bg-zinc-200 dark:bg-zinc-800 px-6 py-2 text-sm font-medium w-full"
             >
               Close
             </button>
