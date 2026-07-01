@@ -8,7 +8,7 @@ export const config = createConfig({
   connectors: [
     coinbaseWallet({
       appName: 'B20Nation',
-      preference: 'smartWalletOnly',
+      preference: { options: 'smartWalletOnly' },
     }),
   ],
   transports: {
