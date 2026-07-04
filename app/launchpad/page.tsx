@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useAccount,
   useBalance,
@@ -58,6 +58,7 @@ export default function Launchpad() {
 
   const { data: gasPrice } = useGasPrice({ query: { refetchInterval: 15000 } })
   const deployFee = gasPrice ? Number(formatEther(B20_CREATE_GAS * gasPrice)).toFixed(8) : null
+  const enoughEth = ethBalance && gasPrice ? ethBalance.value >= B20_CREATE_GAS * gasPrice : null
 
   // --- Deploy ---
   const { writeContract: deployWrite, data: deployHash, isPending: deployPending, error: deployError } = useWriteContract()
@@ -73,7 +74,14 @@ export default function Launchpad() {
 
   const dec = Number(decimals || '18')
   const decimalsValid = Number.isInteger(dec) && dec >= MIN_DECIMALS && dec <= MAX_DECIMALS
-  const canDeploy = isConnected && !!tokenName.trim() && !!symbol.trim() && decimalsValid && !deployPending && !deployConfirming
+  const canDeploy =
+    isConnected &&
+    !!tokenName.trim() &&
+    !!symbol.trim() &&
+    decimalsValid &&
+    enoughEth !== false &&
+    !deployPending &&
+    !deployConfirming
 
   const handleDeploy = () => {
     if (!address) return
@@ -137,10 +145,22 @@ export default function Launchpad() {
   const inputClass =
     'w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm font-mono text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-500'
 
-  const enoughEth = useMemo(
-    () => (ethBalance && gasPrice ? ethBalance.value >= B20_CREATE_GAS * gasPrice : null),
-    [ethBalance, gasPrice],
-  )
+  // Progressive gating — the deploy step stays locked until every required
+  // parameter is satisfied; each later step activates when its turn comes.
+  const deployBlockers: string[] = []
+  if (!isConnected) deployBlockers.push('connect your wallet')
+  if (!tokenName.trim()) deployBlockers.push('a token name')
+  if (!symbol.trim()) deployBlockers.push('a symbol')
+  if (!decimalsValid) deployBlockers.push('decimals 6–18')
+  if (enoughEth === false) deployBlockers.push('enough test ETH')
+
+  // 1 = deploy, 2 = grant MINT_ROLE, 3 = mint.
+  const step = deployedToken ? (hasMintRole ? 3 : 2) : 1
+  const steps = [
+    { n: 1, label: 'Deploy' },
+    { n: 2, label: 'Grant role' },
+    { n: 3, label: 'Mint' },
+  ]
 
   return (
     <div className="flex flex-col flex-1 items-center bg-zinc-50 font-sans dark:bg-black">
@@ -202,6 +222,29 @@ export default function Launchpad() {
             <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
               <span className="text-sm font-medium text-black dark:text-white">Deploy a B20 Token</span>
 
+              {/* Progress stepper — done (green) / active (blue) / locked (grey) */}
+              <div className="flex items-center gap-1.5 text-xs">
+                {steps.map((s, i) => (
+                  <div key={s.n} className="flex items-center gap-1.5">
+                    <span
+                      className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
+                        step > s.n
+                          ? 'bg-green-600 text-white'
+                          : step === s.n
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'
+                      }`}
+                    >
+                      {step > s.n ? '✓' : s.n}
+                    </span>
+                    <span className={step >= s.n ? 'text-black dark:text-white' : 'text-zinc-400 dark:text-zinc-600'}>
+                      {s.label}
+                    </span>
+                    {i < steps.length - 1 && <span className="text-zinc-300 dark:text-zinc-700 px-0.5">→</span>}
+                  </div>
+                ))}
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5 text-sm">
                   <span className="text-zinc-500">Token Name</span>
@@ -234,6 +277,13 @@ export default function Launchpad() {
                   >
                     {deployPending ? 'Confirm in wallet…' : deployConfirming ? 'Deploying…' : 'Deploy B20'}
                   </button>
+                  {deployBlockers.length > 0 ? (
+                    <p className="text-xs text-zinc-500 text-center">
+                      Activates once you add: {deployBlockers.join(', ')}.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-green-600 dark:text-green-500 text-center">Ready to deploy ✓</p>
+                  )}
                   {deployError && (
                     <p className="text-xs text-red-500 break-words">{deployError.message.split('\n')[0]}</p>
                   )}
@@ -256,6 +306,7 @@ export default function Launchpad() {
 
                   {/* Grant MINT_ROLE */}
                   <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">STEP 2 · GRANT ROLE</span>
                     <div className="flex justify-between text-sm">
                       <span className="text-zinc-500">MINT_ROLE</span>
                       <span className={`font-mono text-xs ${hasMintRole ? 'text-green-600 dark:text-green-500' : 'text-amber-500'}`}>
@@ -274,7 +325,8 @@ export default function Launchpad() {
                   </div>
 
                   {/* Mint */}
-                  <div className="flex flex-col gap-2">
+                  <div className={`flex flex-col gap-2 ${hasMintRole ? '' : 'opacity-50'}`}>
+                    <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">STEP 3 · MINT SUPPLY</span>
                     <label className="flex flex-col gap-1.5 text-sm">
                       <span className="text-zinc-500">Mint amount</span>
                       <input className={inputClass} placeholder="1000" value={mintAmount} onChange={(e) => setMintAmount(e.target.value)} />
