@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BNOVA Token",
-  description: "Baseanova (BNOVA) token dashboard on Base Sepolia",
+  title: "B20Nation (NAT20)",
+  description: "Mint the NAT20 B20 token on Base Sepolia",
 };
 
 export default function RootLayout({
