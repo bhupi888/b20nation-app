@@ -8,6 +8,33 @@ import { resolveBasename } from '@/lib/basename'
 
 const PER_PAGE = 15
 const LOG_WINDOW = 2000n // public Base Sepolia RPC caps getLogs at a 2000-block range
+const CONCURRENCY = 4 // cap parallel RPC calls so the public endpoint doesn't rate-limit us
+
+// Run `fn` over `items` with a bounded number of concurrent calls, tolerating
+// individual failures. A rate-limited chunk is skipped (and picked up on the
+// next refetch) instead of rejecting the whole batch and blanking the list.
+async function mapSettled<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = []
+  let next = 0
+  async function worker() {
+    while (next < items.length) {
+      const item = items[next++]
+      try {
+        results.push(await fn(item))
+      } catch {
+        // swallow — a dropped chunk just means fewer rows this pass
+      }
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
+  )
+  return results
+}
 
 type MintRow = {
   claimer: Address
@@ -62,28 +89,25 @@ export function MintHistory() {
         ranges.push([from, to])
       }
 
-      const logArrays = await Promise.all(
-        ranges.map(([from, to]) =>
-          c.getContractEvents({
-            address: CLAIM_ADDRESS,
-            abi: CLAIM_ABI,
-            eventName: 'Claimed',
-            fromBlock: from,
-            toBlock: to,
-          }),
-        ),
+      const logArrays = await mapSettled(ranges, CONCURRENCY, ([from, to]) =>
+        c.getContractEvents({
+          address: CLAIM_ADDRESS,
+          abi: CLAIM_ABI,
+          eventName: 'Claimed',
+          fromBlock: from,
+          toBlock: to,
+        }),
       )
       const logs = logArrays.flat()
 
       // Fetch timestamps once per unique block (mints are sparse).
       const uniqueBlocks = [...new Set(logs.map((l) => l.blockNumber!))]
       const blockTimes = new Map<bigint, number>()
-      await Promise.all(
-        uniqueBlocks.map(async (bn) => {
-          const b = await c.getBlock({ blockNumber: bn })
-          blockTimes.set(bn, Number(b.timestamp))
-        }),
-      )
+      const times = await mapSettled(uniqueBlocks, CONCURRENCY, async (bn) => {
+        const b = await c.getBlock({ blockNumber: bn })
+        return [bn, Number(b.timestamp)] as const
+      })
+      for (const [bn, ts] of times) blockTimes.set(bn, ts)
 
       const mapped: MintRow[] = logs.map((l) => ({
         claimer: (l.args as { claimer: Address }).claimer,
