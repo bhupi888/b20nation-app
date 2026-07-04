@@ -6,6 +6,7 @@ import { formatUnits, formatEther } from 'viem'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { MintHistory } from './MintHistory'
+import { WhyB20 } from './WhyB20'
 
 // Creator's X profile — users are gated to follow this before minting unlocks.
 const X_PROFILE_URL = 'https://x.com/bhupix13'
@@ -212,6 +213,8 @@ export default function Home() {
             <MintHistory />
           </div>
         </div>
+
+        <WhyB20 />
       </main>
 
       {showModal && (
