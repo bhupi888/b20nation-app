@@ -139,7 +139,7 @@ export default function Home() {
                       href="/launchpad"
                       className="rounded-full bg-blue-600 text-white px-5 py-2 text-sm font-medium text-center"
                     >
-                      🚀 Launch your own token
+                      🚀 Deploy your own token
                     </Link>
                   </>
                 ) : (
@@ -237,7 +237,7 @@ export default function Home() {
               href="/launchpad"
               className="rounded-full bg-blue-600 text-white px-6 py-2 text-sm font-medium w-full text-center"
             >
-              🚀 Launch your own token
+              🚀 Deploy your own token
             </Link>
             <button
               onClick={() => reset()}
