@@ -124,6 +124,26 @@ export default function Home() {
                   </p>
                 )}
 
+                {/* X follow status — always visible. Minting requires a follow, so a minted wallet reads as followed. */}
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-500">X Follow</span>
+                  <span
+                    className={`font-mono text-xs ${
+                      hasClaimed || followStep === 'verified'
+                        ? 'text-green-600 dark:text-green-500'
+                        : followStep === 'verifying'
+                        ? 'text-zinc-500'
+                        : 'text-amber-500'
+                    }`}
+                  >
+                    {hasClaimed || followStep === 'verified'
+                      ? 'Followed ✓'
+                      : followStep === 'verifying'
+                      ? 'Verifying…'
+                      : 'Not followed'}
+                  </span>
+                </div>
+
                 {hasClaimed ? (
                   <>
                     <button disabled className="rounded-full bg-zinc-300 dark:bg-zinc-700 text-zinc-500 px-5 py-2 text-sm font-medium cursor-not-allowed">
@@ -135,37 +155,12 @@ export default function Home() {
                     >
                       Share on X
                     </button>
-                    <Link
-                      href="/launchpad"
-                      className="rounded-full bg-blue-600 text-white px-5 py-2 text-sm font-medium text-center"
-                    >
-                      🚀 Deploy your own token
-                    </Link>
                   </>
                 ) : (
                   <>
                     <p className="text-xs text-zinc-500 text-center">
                       Cost: Free — you only pay Base Sepolia network gas
                     </p>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-zinc-500">X Follow</span>
-                      <span
-                        className={`font-mono text-xs ${
-                          followStep === 'verified'
-                            ? 'text-green-600 dark:text-green-500'
-                            : followStep === 'verifying'
-                            ? 'text-zinc-500'
-                            : 'text-amber-500'
-                        }`}
-                      >
-                        {followStep === 'idle'
-                          ? 'Not followed'
-                          : followStep === 'verifying'
-                          ? 'Verifying…'
-                          : 'Followed ✓'}
-                      </span>
-                    </div>
 
                     {followStep === 'idle' && (
                       <>
@@ -198,6 +193,28 @@ export default function Home() {
                       </button>
                     )}
                   </>
+                )}
+
+                {/* Deploy CTA — locked until you've minted NAT20, then activates */}
+                {hasClaimed ? (
+                  <Link
+                    href="/launchpad"
+                    className="rounded-full bg-blue-600 text-white px-5 py-2 text-sm font-medium text-center"
+                  >
+                    🚀 Deploy your own token
+                  </Link>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      disabled
+                      className="w-full rounded-full bg-zinc-300 dark:bg-zinc-700 text-zinc-500 px-5 py-2 text-sm font-medium cursor-not-allowed"
+                    >
+                      🔒 Deploy your own token
+                    </button>
+                    <p className="text-xs text-zinc-500 text-center">
+                      Mint your NAT20 above to unlock deploying your own B20 token.
+                    </p>
+                  </div>
                 )}
 
               </div>
