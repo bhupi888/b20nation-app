@@ -8,8 +8,12 @@ import Link from 'next/link'
 import { MintHistory } from './MintHistory'
 import { WhyB20 } from './WhyB20'
 
-// Creator's X profile — users are gated to follow this before minting unlocks.
-const X_PROFILE_URL = 'https://x.com/bhupix13'
+// Creator's X account — users are gated to follow this before minting unlocks.
+const X_HANDLE = 'bhupix13'
+const X_PROFILE_URL = `https://x.com/${X_HANDLE}`
+
+// Minimum ETH required to cover mint gas; the mint button stays inactive below this.
+const MIN_MINT_ETH = 1000000000000000n // 0.001 ETH
 
 export default function Home() {
   const { address, isConnected } = useAccount()
@@ -41,10 +45,13 @@ export default function Home() {
 
   const gasCost = receipt ? formatEther(receipt.gasUsed * receipt.effectiveGasPrice) : null
   const showModal = isConfirmed
+  const hasEnoughEth = ethBalance ? ethBalance.value >= MIN_MINT_ETH : false
 
-  // Open the creator's X profile, then run a simulated follow verification.
+  // Open X's follow Web Intent — a small popup with a Follow button for the
+  // creator — then run a simulated follow verification.
   const startFollowVerify = () => {
-    window.open(X_PROFILE_URL, '_blank', 'noopener,noreferrer')
+    const intent = `https://x.com/intent/follow?screen_name=${X_HANDLE}`
+    window.open(intent, 'x-follow', 'popup=yes,width=600,height=650')
     setFollowStep('verifying')
     setTimeout(() => setFollowStep('verified'), 5000)
   }
@@ -115,7 +122,7 @@ export default function Home() {
                   <span className="font-mono">{ethBalance ? formatEther(ethBalance.value) : '0'} ETH</span>
                 </div>
 
-                {ethBalance && ethBalance.value < BigInt('1000000000000000') && (
+                {ethBalance && ethBalance.value < MIN_MINT_ETH && (
                   <p className="text-xs text-amber-500">
                     Low ETH balance — get test ETH from the{' '}
                     <a href="https://portal.cdp.coinbase.com/products/faucet" target="_blank" rel="noopener noreferrer" className="underline">
@@ -186,10 +193,10 @@ export default function Home() {
                     {followStep === 'verified' && (
                       <button
                         onClick={() => writeContract({ address: CLAIM_ADDRESS, abi: CLAIM_ABI, functionName: 'claim' })}
-                        disabled={isPending}
+                        disabled={isPending || !hasEnoughEth}
                         className="rounded-full bg-blue-600 text-white px-5 py-2 text-sm font-medium disabled:opacity-50"
                       >
-                        {isPending ? 'Minting...' : 'Mint 1 NAT20'}
+                        {isPending ? 'Minting...' : !hasEnoughEth ? 'Not enough ETH to mint' : 'Mint 1 NAT20'}
                       </button>
                     )}
                   </>
