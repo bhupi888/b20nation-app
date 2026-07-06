@@ -141,7 +141,7 @@ export default function Launchpad() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm font-mono text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-500'
+    'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-mono text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-500'
 
   // Progressive gating — the deploy step stays locked until every required
   // parameter is satisfied; each later step activates when its turn comes.
@@ -168,7 +168,7 @@ export default function Launchpad() {
         <div className="w-full flex flex-col md:flex-row gap-6 items-start">
           {/* LEFT: deploy info + connected wallet */}
           <div className="w-full md:flex-1 flex flex-col gap-6">
-            <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
+            <div className="w-full panel rounded-2xl p-6 flex flex-col gap-4">
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500">Network</span>
                 <span className="font-mono">Base Sepolia</span>
@@ -183,7 +183,7 @@ export default function Launchpad() {
             </div>
 
             {isConnected ? (
-              <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
+              <div className="w-full panel rounded-2xl p-6 flex flex-col gap-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500">Connected</span>
                   <span className="font-mono text-xs">{address}</span>
@@ -217,7 +217,7 @@ export default function Launchpad() {
 
           {/* RIGHT: deploy → address → grant → mint */}
           <div className="w-full md:flex-1">
-            <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
+            <div className="w-full panel rounded-2xl p-6 flex flex-col gap-4">
               <span className="text-sm font-medium text-black dark:text-white">Deploy a B20 Token</span>
 
               {/* Progress stepper — done (green) / active (blue) / locked (grey) */}
@@ -356,7 +356,7 @@ export default function Launchpad() {
           <h2 className="text-xl font-bold text-black dark:text-white">What you’re doing</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {DEPLOY_FACTS.map((fact, i) => (
-              <div key={i} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 text-sm text-zinc-500">
+              <div key={i} className="panel rounded-2xl p-4 text-sm text-zinc-500">
                 {fact}
               </div>
             ))}
