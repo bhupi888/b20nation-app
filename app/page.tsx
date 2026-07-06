@@ -103,8 +103,11 @@ export default function Home() {
 
   // Open the X post composer pre-filled with a mint announcement.
   const shareOnX = () => {
-    const url = typeof window !== 'undefined' ? window.location.origin : ''
-    const text = `I just minted a B20 token (NAT20) ${url} on Base Sepolia`
+    const text = `I just minted $NAT20, B20 Token on Base Sepolia
+Built by @bhupix13. Check it out on https://b20nation.xyz
+Mint and launch your own.
+@base
+#base #baseapp #buildonbase #nat20 #B20`
     const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}`
     window.open(intent, '_blank', 'noopener,noreferrer')
   }
