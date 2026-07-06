@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   useAccount,
   useBalance,
@@ -47,8 +47,7 @@ export default function Launchpad() {
   const [supplyCap, setSupplyCap] = useState('')
   const [mintAmount, setMintAmount] = useState('')
 
-  // Immutable facts about the token once deployed.
-  const [deployedToken, setDeployedToken] = useState<Address | null>(null)
+  // Decimals captured at deploy time, used to format the minted balance.
   const [deployedDecimals, setDeployedDecimals] = useState(18)
 
   const { address, isConnected } = useAccount()
@@ -64,12 +63,11 @@ export default function Launchpad() {
   const { writeContract: deployWrite, data: deployHash, isPending: deployPending, error: deployError } = useWriteContract()
   const { data: deployReceipt, isLoading: deployConfirming } = useWaitForTransactionReceipt({ hash: deployHash })
 
-  // Pull the new token address out of the B20Created event once the tx confirms.
-  useEffect(() => {
-    if (!deployReceipt) return
+  // The new token address, derived from the B20Created event once the tx confirms.
+  const deployedToken = useMemo<Address | null>(() => {
+    if (!deployReceipt) return null
     const logs = parseEventLogs({ abi: B20_FACTORY_ABI, eventName: 'B20Created', logs: deployReceipt.logs })
-    const token = logs[0]?.args?.token
-    if (token) setDeployedToken(token as Address)
+    return (logs[0]?.args?.token as Address | undefined) ?? null
   }, [deployReceipt])
 
   const dec = Number(decimals || '18')
@@ -115,7 +113,7 @@ export default function Launchpad() {
   const { isSuccess: grantConfirmed } = useWaitForTransactionReceipt({ hash: grantHash })
   useEffect(() => {
     if (grantConfirmed) refetchRole()
-  }, [grantConfirmed])
+  }, [grantConfirmed, refetchRole])
 
   const handleGrant = () => {
     if (!deployedToken || !address) return
@@ -134,7 +132,7 @@ export default function Launchpad() {
   })
   useEffect(() => {
     if (mintConfirmed) refetchBalance()
-  }, [mintConfirmed])
+  }, [mintConfirmed, refetchBalance])
 
   const handleMint = () => {
     if (!deployedToken || !address || !mintAmount.trim()) return

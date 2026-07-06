@@ -10,7 +10,6 @@ import { WhyB20 } from './WhyB20'
 
 // Creator's X account — users are gated to follow this before minting unlocks.
 const X_HANDLE = 'bhupix13'
-const X_PROFILE_URL = `https://x.com/${X_HANDLE}`
 
 // Minimum ETH required to cover mint gas; the mint button stays inactive below this.
 const MIN_MINT_ETH = 1000000000000000n // 0.001 ETH
@@ -41,7 +40,7 @@ export default function Home() {
       refetchClaimed()
       refetchTotalClaims()
     }
-  }, [isConfirmed])
+  }, [isConfirmed, refetchBalance, refetchClaimed, refetchTotalClaims])
 
   const gasCost = receipt ? formatEther(receipt.gasUsed * receipt.effectiveGasPrice) : null
   const showModal = isConfirmed
@@ -53,7 +52,7 @@ export default function Home() {
     const intent = `https://x.com/intent/follow?screen_name=${X_HANDLE}`
     window.open(intent, 'x-follow', 'popup=yes,width=600,height=650')
     setFollowStep('verifying')
-    setTimeout(() => setFollowStep('verified'), 5000)
+    setTimeout(() => setFollowStep('verified'), 10000)
   }
 
   // Open the X post composer pre-filled with a mint announcement.
@@ -171,7 +170,7 @@ export default function Home() {
 
                     {followStep === 'idle' && (
                       <>
-                        <p className="text-xs text-zinc-500 text-center">
+                        <p className="text-sm font-bold text-red-500 text-center">
                           Follow the creator on X to unlock minting
                         </p>
                         <button
