@@ -14,6 +14,41 @@ const X_HANDLE = 'bhupix13'
 // Minimum ETH required to cover mint gas; the mint button stays inactive below this.
 const MIN_MINT_ETH = 1000000000000000n // 0.001 ETH
 
+// Claim cap — the total number of wallets that can ever mint.
+const MINT_CAP = 1_000_000
+
+const FAUCET_URL = 'https://portal.cdp.coinbase.com/products/faucet'
+
+type StepState = 'active' | 'done' | 'idle'
+
+// A single step in the mint checklist (Follow → Confirm).
+function StepRow({ n, label, state }: { n: number; label: string; state: StepState }) {
+  const done = state === 'done'
+  const active = state === 'active'
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${
+        active ? 'bg-blue-50 dark:bg-blue-950/40' : 'bg-zinc-100 dark:bg-zinc-900'
+      } ${state === 'idle' ? 'opacity-60' : ''}`}
+    >
+      <div
+        className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium ${
+          done
+            ? 'bg-green-600 text-white'
+            : active
+            ? 'bg-blue-600 text-white'
+            : 'bg-zinc-300 dark:bg-zinc-700 text-zinc-500'
+        }`}
+      >
+        {done ? '✓' : n}
+      </div>
+      <span className={`text-sm ${active ? 'text-blue-700 dark:text-blue-300' : 'text-zinc-600 dark:text-zinc-400'}`}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
 export default function Home() {
   const { address, isConnected } = useAccount()
   const { connect } = useConnect()
@@ -45,6 +80,17 @@ export default function Home() {
   const gasCost = receipt ? formatEther(receipt.gasUsed * receipt.effectiveGasPrice) : null
   const showModal = isConfirmed
   const hasEnoughEth = ethBalance ? ethBalance.value >= MIN_MINT_ETH : false
+  const lowEth = !!ethBalance && ethBalance.value < MIN_MINT_ETH
+
+  const minted = totalClaims ? Number(totalClaims) : 0
+  // Floor the fill at 2% once anyone has minted so the bar reads as "started".
+  const mintPct = Math.min(100, minted > 0 ? Math.max(2, (minted / MINT_CAP) * 100) : 0)
+  const shortAddr = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : ''
+  const shortContract = `${NAT20_ADDRESS.slice(0, 6)}…${NAT20_ADDRESS.slice(-4)}`
+
+  const followed = hasClaimed || followStep === 'verified'
+  const step1State: StepState = !isConnected ? 'idle' : followed ? 'done' : 'active'
+  const step2State: StepState = hasClaimed ? 'done' : isConnected && followStep === 'verified' ? 'active' : 'idle'
 
   // Open X's follow Web Intent — a small popup with a Follow button for the
   // creator — then run a simulated follow verification.
@@ -65,177 +111,178 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1 items-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-5xl flex-col gap-8 py-16 px-8">
+      <main className="flex flex-1 w-full max-w-5xl flex-col gap-6 py-12 px-8">
+        {/* Top bar */}
         <header className="w-full flex justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-black dark:text-white">
-            {name ?? 'B20Nation'} ({symbol ?? 'NAT20'})
-          </h1>
-          {isConnected ? (
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-xs text-zinc-500">
-                {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : ''}
-              </span>
-              <button
-                onClick={() => disconnect()}
-                className="rounded-full bg-zinc-200 dark:bg-zinc-800 px-4 py-2 text-sm font-medium"
-              >
-                Disconnect
-              </button>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-600 text-white text-sm font-bold">B</div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-bold text-black dark:text-white">{name ?? 'B20Nation'}</span>
+              <span className="font-mono text-xs text-zinc-500">{symbol ?? 'NAT20'}</span>
             </div>
-          ) : (
-            <button
-              onClick={() => connect({ connector: connectors[0] })}
-              className="rounded-full bg-black dark:bg-white text-white dark:text-black px-5 py-2 text-sm font-medium whitespace-nowrap"
-            >
-              Connect Base Account
-            </button>
-          )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs px-3 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Base Sepolia
+            </span>
+            {isConnected ? (
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-zinc-500">{shortAddr}</span>
+                <button
+                  onClick={() => disconnect()}
+                  className="rounded-full bg-zinc-200 dark:bg-zinc-800 px-4 py-2 text-sm font-medium"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => connect({ connector: connectors[0] })}
+                className="rounded-full bg-black dark:bg-white text-white dark:text-black px-5 py-2 text-sm font-medium whitespace-nowrap"
+              >
+                Connect Base Account
+              </button>
+            )}
+          </div>
         </header>
 
-        <div className="w-full flex flex-col md:flex-row gap-6 items-start">
-          {/* LEFT: stats + connect / mint */}
-          <div className="w-full md:flex-1 flex flex-col gap-6">
-            <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">Total Supply</span>
-                <span className="font-mono">{totalSupply ? formatUnits(totalSupply, 18) : '-'} NAT20</span>
+        {/* Hero: token identity + mint action */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          {/* Token identity + live progress + stats */}
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-5">
+            <div>
+              <div className="text-3xl font-bold text-black dark:text-white leading-none">{symbol ?? 'NAT20'}</div>
+              <div className="text-sm text-zinc-500 mt-1.5">Claim one on Base Sepolia — one per wallet</div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-baseline mb-1.5">
+                <span className="text-xs text-zinc-500">Wallets minted</span>
+                <span className="font-mono text-xs text-black dark:text-white">
+                  {minted.toLocaleString()} / {MINT_CAP.toLocaleString()}
+                </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">Contract</span>
-                <span className="font-mono text-xs">{NAT20_ADDRESS}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">Total Wallets Minted</span>
-                <span className="font-mono">{totalClaims?.toString() ?? '0'} / 1,000,000</span>
+              <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                <div className="h-full rounded-full bg-blue-600" style={{ width: `${mintPct}%` }} />
               </div>
             </div>
 
-            {isConnected ? (
-              <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Your NAT20 Balance</span>
-                  <span className="font-mono">{balance ? formatUnits(balance, 18) : '0'} NAT20</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5">
+                <div className="text-xs text-zinc-500">Total supply</div>
+                <div className="text-base font-semibold text-black dark:text-white">
+                  {totalSupply ? Number(formatUnits(totalSupply, 18)).toLocaleString() : '—'}
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Your Sepolia ETH</span>
-                  <span className="font-mono">{ethBalance ? formatEther(ethBalance.value) : '0'} ETH</span>
+              </div>
+              <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5">
+                <div className="text-xs text-zinc-500">Contract</div>
+                <div className="font-mono text-xs text-blue-600 dark:text-blue-400 mt-0.5" title={NAT20_ADDRESS}>
+                  {shortContract}
                 </div>
+              </div>
+            </div>
+          </div>
 
-                {ethBalance && ethBalance.value < MIN_MINT_ETH && (
-                  <p className="text-xs text-amber-500">
-                    Low ETH balance — get test ETH from the{' '}
-                    <a href="https://portal.cdp.coinbase.com/products/faucet" target="_blank" rel="noopener noreferrer" className="underline">
-                      Base Sepolia Faucet
-                    </a>
-                  </p>
-                )}
-
-                {/* X follow status — always visible. Minting requires a follow, so a minted wallet reads as followed. */}
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">X Follow</span>
-                  <span
-                    className={`font-mono text-xs ${
-                      hasClaimed || followStep === 'verified'
-                        ? 'text-green-600 dark:text-green-500'
-                        : followStep === 'verifying'
-                        ? 'text-zinc-500'
-                        : 'text-amber-500'
-                    }`}
-                  >
-                    {hasClaimed || followStep === 'verified'
-                      ? 'Followed ✓'
-                      : followStep === 'verifying'
-                      ? 'Verifying…'
-                      : 'Not followed'}
+          {/* Mint action */}
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
+            {!isConnected ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-black dark:text-white">Mint your NAT20</span>
+                  <span className="text-xs text-zinc-500">Free + gas</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <StepRow n={1} label="Follow the creator on X" state="idle" />
+                  <StepRow n={2} label="Confirm mint in wallet" state="idle" />
+                </div>
+                <button
+                  onClick={() => connect({ connector: connectors[0] })}
+                  className="rounded-full bg-blue-600 text-white px-5 py-3 text-sm font-medium"
+                >
+                  Connect Base Account
+                </button>
+                <p className="text-xs text-zinc-500">Connect your Base Account to start the mint.</p>
+              </>
+            ) : hasClaimed ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-black dark:text-white">You&rsquo;re in</span>
+                  <span className="text-xs text-green-600 dark:text-green-500">Minted ✓</span>
+                </div>
+                <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5 flex justify-between">
+                  <span className="text-xs text-zinc-500">Your balance</span>
+                  <span className="font-mono text-sm text-black dark:text-white">{balance ? formatUnits(balance, 18) : '1'} NAT20</span>
+                </div>
+                <button
+                  onClick={shareOnX}
+                  className="rounded-full bg-black dark:bg-white text-white dark:text-black px-5 py-2.5 text-sm font-medium"
+                >
+                  Share on X
+                </button>
+                <Link
+                  href="/launchpad"
+                  className="rounded-full bg-blue-600 text-white px-5 py-2.5 text-sm font-medium text-center"
+                >
+                  Deploy your own token →
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-black dark:text-white">Mint your NAT20</span>
+                  <span className="text-xs text-zinc-500">Free + gas</span>
+                </div>
+                <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5 flex justify-between">
+                  <span className="text-xs text-zinc-500">Your balance</span>
+                  <span className="font-mono text-xs text-black dark:text-white">
+                    {balance ? formatUnits(balance, 18) : '0'} NAT20 · {ethBalance ? Number(formatEther(ethBalance.value)).toFixed(4) : '0'} ETH
                   </span>
                 </div>
 
-                {hasClaimed ? (
-                  <>
-                    <button disabled className="rounded-full bg-zinc-300 dark:bg-zinc-700 text-zinc-500 px-5 py-2 text-sm font-medium cursor-not-allowed">
-                      Already Minted
-                    </button>
-                    <button
-                      onClick={shareOnX}
-                      className="rounded-full bg-black dark:bg-white text-white dark:text-black px-5 py-2 text-sm font-medium"
-                    >
-                      Share on X
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xs text-zinc-500 text-center">
-                      Cost: Free — you only pay Base Sepolia network gas
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <StepRow n={1} label="Follow the creator on X" state={step1State} />
+                  <StepRow n={2} label="Confirm mint in wallet" state={step2State} />
+                </div>
 
-                    {followStep === 'idle' && (
-                      <>
-                        <p className="text-sm font-bold text-red-500 text-center">
-                          Follow the creator on X to unlock minting
-                        </p>
-                        <button
-                          onClick={startFollowVerify}
-                          className="rounded-full bg-black dark:bg-white text-white dark:text-black px-5 py-2 text-sm font-medium"
-                        >
-                          Follow Creator
-                        </button>
-                      </>
-                    )}
-
-                    {followStep === 'verifying' && (
-                      <div className="flex items-center justify-center gap-2 py-2 text-sm text-zinc-500">
-                        <span className="w-4 h-4 border-2 border-zinc-300 border-t-blue-600 rounded-full animate-spin" />
-                        Verifying follow…
-                      </div>
-                    )}
-
-                    {followStep === 'verified' && (
-                      <button
-                        onClick={() => writeContract({ address: CLAIM_ADDRESS, abi: CLAIM_ABI, functionName: 'claim' })}
-                        disabled={isPending || !hasEnoughEth}
-                        className="rounded-full bg-blue-600 text-white px-5 py-2 text-sm font-medium disabled:opacity-50"
-                      >
-                        {isPending ? 'Minting...' : !hasEnoughEth ? 'Not enough ETH to mint' : 'Mint 1 NAT20'}
-                      </button>
-                    )}
-                  </>
+                {followStep === 'idle' && (
+                  <button
+                    onClick={startFollowVerify}
+                    className="rounded-full bg-blue-600 text-white px-5 py-3 text-sm font-medium"
+                  >
+                    Follow to unlock minting
+                  </button>
                 )}
 
-                {/* Deploy CTA — locked until you've minted NAT20, then activates */}
-                {hasClaimed ? (
-                  <Link
-                    href="/launchpad"
-                    className="rounded-full bg-blue-600 text-white px-5 py-2 text-sm font-medium text-center"
-                  >
-                    🚀 Deploy your own token
-                  </Link>
-                ) : (
-                  <div className="flex flex-col gap-1.5">
-                    <button
-                      disabled
-                      className="w-full rounded-full bg-zinc-300 dark:bg-zinc-700 text-zinc-500 px-5 py-2 text-sm font-medium cursor-not-allowed"
-                    >
-                      🔒 Deploy your own token
-                    </button>
-                    <p className="text-xs text-zinc-500 text-center">
-                      Mint your NAT20 above to unlock deploying your own B20 token.
-                    </p>
+                {followStep === 'verifying' && (
+                  <div className="flex items-center justify-center gap-2 py-3 text-sm text-zinc-500">
+                    <span className="w-4 h-4 border-2 border-zinc-300 border-t-blue-600 rounded-full animate-spin" />
+                    Verifying follow…
                   </div>
                 )}
 
-              </div>
-            ) : (
-              <div className="w-full rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-6 text-sm text-zinc-500 text-center">
-                Connect your Base Account (top right) to mint.
-              </div>
+                {followStep === 'verified' && (
+                  <button
+                    onClick={() => writeContract({ address: CLAIM_ADDRESS, abi: CLAIM_ABI, functionName: 'claim' })}
+                    disabled={isPending || !hasEnoughEth}
+                    className="rounded-full bg-blue-600 text-white px-5 py-3 text-sm font-medium disabled:opacity-50"
+                  >
+                    {isPending ? 'Minting…' : !hasEnoughEth ? 'Not enough ETH to mint' : 'Mint 1 NAT20'}
+                  </button>
+                )}
+
+                <p className={`text-xs ${lowEth ? 'text-amber-500' : 'text-zinc-500'}`}>
+                  {lowEth ? 'Low ETH balance — get' : 'Need'} test ETH? Grab some from the{' '}
+                  <a href={FAUCET_URL} target="_blank" rel="noopener noreferrer" className="underline">
+                    Base Sepolia faucet
+                  </a>
+                </p>
+              </>
             )}
           </div>
-
-          {/* RIGHT: recent mints */}
-          <div className="w-full md:flex-1">
-            <MintHistory />
-          </div>
         </div>
+
+        {/* Recent mints */}
+        <MintHistory />
 
         <WhyB20 />
       </main>
