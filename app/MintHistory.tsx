@@ -133,7 +133,7 @@ export function MintHistory() {
   const visible = all.slice(current * PER_PAGE, current * PER_PAGE + PER_PAGE)
 
   return (
-    <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
+    <div className="panel w-full rounded-2xl p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-black dark:text-white">Recent Mints</h2>
         <span className="text-xs text-zinc-500">{all.length} total</span>

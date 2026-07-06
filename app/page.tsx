@@ -28,7 +28,7 @@ function StepRow({ n, label, state }: { n: number; label: string; state: StepSta
   return (
     <div
       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${
-        active ? 'bg-blue-50 dark:bg-blue-950/40' : 'bg-zinc-100 dark:bg-zinc-900'
+        active ? 'bg-blue-950/40 border border-blue-500/30' : 'panel-inset'
       } ${state === 'idle' ? 'opacity-60' : ''}`}
     >
       <div
@@ -149,7 +149,7 @@ export default function Home() {
         {/* Hero: token identity + mint action */}
         <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {/* Token identity + live progress + stats */}
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-5">
+          <div className="panel rounded-2xl p-6 flex flex-col gap-5">
             <div>
               <div className="text-3xl font-bold text-black dark:text-white leading-none">{symbol ?? 'NAT20'}</div>
               <div className="text-sm text-zinc-500 mt-1.5">Claim one on Base Sepolia — one per wallet</div>
@@ -168,13 +168,13 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5">
+              <div className="rounded-lg panel-inset px-3 py-2.5">
                 <div className="text-xs text-zinc-500">Total supply</div>
-                <div className="text-base font-semibold text-black dark:text-white">
+                <div className="text-base font-mono font-semibold text-black dark:text-white">
                   {totalSupply ? Number(formatUnits(totalSupply, 18)).toLocaleString() : '—'}
                 </div>
               </div>
-              <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5">
+              <div className="rounded-lg panel-inset px-3 py-2.5">
                 <div className="text-xs text-zinc-500">Contract</div>
                 <div className="font-mono text-xs text-blue-600 dark:text-blue-400 mt-0.5" title={NAT20_ADDRESS}>
                   {shortContract}
@@ -184,7 +184,7 @@ export default function Home() {
           </div>
 
           {/* Mint action */}
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col gap-4">
+          <div className="panel rounded-2xl p-6 flex flex-col gap-4">
             {!isConnected ? (
               <>
                 <div className="flex items-center justify-between">
@@ -209,7 +209,7 @@ export default function Home() {
                   <span className="text-sm font-medium text-black dark:text-white">You&rsquo;re in</span>
                   <span className="text-xs text-green-600 dark:text-green-500">Minted ✓</span>
                 </div>
-                <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5 flex justify-between">
+                <div className="rounded-lg panel-inset px-3 py-2.5 flex justify-between">
                   <span className="text-xs text-zinc-500">Your balance</span>
                   <span className="font-mono text-sm text-black dark:text-white">{balance ? formatUnits(balance, 18) : '1'} NAT20</span>
                 </div>
@@ -232,7 +232,7 @@ export default function Home() {
                   <span className="text-sm font-medium text-black dark:text-white">Mint your NAT20</span>
                   <span className="text-xs text-zinc-500">Free + gas</span>
                 </div>
-                <div className="rounded-lg bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5 flex justify-between">
+                <div className="rounded-lg panel-inset px-3 py-2.5 flex justify-between">
                   <span className="text-xs text-zinc-500">Your balance</span>
                   <span className="font-mono text-xs text-black dark:text-white">
                     {balance ? formatUnits(balance, 18) : '0'} NAT20 · {ethBalance ? Number(formatEther(ethBalance.value)).toFixed(4) : '0'} ETH
