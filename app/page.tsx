@@ -56,6 +56,7 @@ export default function Home() {
   const { disconnect } = useDisconnect()
 
   const [followStep, setFollowStep] = useState<'idle' | 'verifying' | 'verified'>('idle')
+  const [copied, setCopied] = useState(false)
 
   const { data: name } = useReadContract({ address: NAT20_ADDRESS, abi: NAT20_ABI, functionName: 'name' })
   const { data: symbol } = useReadContract({ address: NAT20_ADDRESS, abi: NAT20_ABI, functionName: 'symbol' })
@@ -112,17 +113,42 @@ Mint and launch your own.
     window.open(intent, '_blank', 'noopener,noreferrer')
   }
 
+  // Copy the full NAT20 contract address to the clipboard, with brief feedback.
+  const copyContract = () => {
+    navigator.clipboard.writeText(NAT20_ADDRESS)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   return (
     <div className="flex flex-col flex-1 items-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-5xl flex-col gap-6 py-12 px-8">
         {/* Top bar */}
         <header className="w-full flex justify-between items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-600 text-white text-sm font-bold">B</div>
+            <div className="logo-cube" aria-hidden>
+              <div className="logo-cube-inner">
+                <span className="logo-face lf-front">B</span>
+                <span className="logo-face lf-back">B</span>
+                <span className="logo-face lf-right">B</span>
+                <span className="logo-face lf-left">B</span>
+                <span className="logo-face lf-top">B</span>
+                <span className="logo-face lf-bottom">B</span>
+              </div>
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-bold text-black dark:text-white">{name ?? 'B20Nation'}</span>
               <span className="font-mono text-xs text-zinc-500">{symbol ?? 'NAT20'}</span>
             </div>
+            <a
+              href="https://www.talentprotocol.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-full bg-green-500/10 text-green-500 hover:bg-green-500/20 text-xs font-medium px-2.5 py-1 transition-colors"
+              title="Verified on Talent Protocol"
+            >
+              <span aria-hidden>✓</span> Verified on Talent Protocol
+            </a>
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs px-3 py-1.5">
@@ -177,12 +203,21 @@ Mint and launch your own.
                   {totalSupply ? Number(formatUnits(totalSupply, 18)).toLocaleString() : '—'}
                 </div>
               </div>
-              <div className="rounded-lg panel-inset px-3 py-2.5">
-                <div className="text-xs text-zinc-500">Contract</div>
-                <div className="font-mono text-xs text-blue-600 dark:text-blue-400 mt-0.5" title={NAT20_ADDRESS}>
+              <button
+                onClick={copyContract}
+                title="Click to copy the contract address"
+                className="group rounded-lg panel-inset px-3 py-2.5 text-left transition-colors hover:border-blue-500/40"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-500">Contract</span>
+                  <span className={`text-[10px] ${copied ? 'text-green-500' : 'text-zinc-500 group-hover:text-blue-400'}`}>
+                    {copied ? 'Copied ✓' : 'Copy'}
+                  </span>
+                </div>
+                <div className="font-mono text-xs text-blue-600 dark:text-blue-400 mt-0.5">
                   {shortContract}
                 </div>
-              </div>
+              </button>
             </div>
           </div>
 
