@@ -126,7 +126,16 @@ Mint and launch your own.
         {/* Top bar */}
         <header className="w-full flex justify-between items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-600 text-white text-sm font-bold">B</div>
+            <div className="logo-cube" aria-hidden>
+              <div className="logo-cube-inner">
+                <span className="logo-face lf-front">B</span>
+                <span className="logo-face lf-back">B</span>
+                <span className="logo-face lf-right">B</span>
+                <span className="logo-face lf-left">B</span>
+                <span className="logo-face lf-top">B</span>
+                <span className="logo-face lf-bottom">B</span>
+              </div>
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-bold text-black dark:text-white">{name ?? 'B20Nation'}</span>
               <span className="font-mono text-xs text-zinc-500">{symbol ?? 'NAT20'}</span>
