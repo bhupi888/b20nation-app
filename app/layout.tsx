@@ -15,6 +15,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "B20Nation (NAT20)",
   description: "Mint the NAT20 B20 token on Base Sepolia",
+  // Website ownership verification meta tag (TalentApp).
+  other: {
+    "talentapp:project_verification":
+      "5bc8c90a97c55aee9bec5f5d7eb18ab424445ba69c6ba7b7fb59652108ced0d071a792087951e23cbc136d390c6d44dfb1c2ff1b64867b97a33937740a2502e7",
+  },
 };
 
 export default function RootLayout({
