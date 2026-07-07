@@ -131,12 +131,15 @@ Mint and launch your own.
               <span className="text-xl font-bold text-black dark:text-white">{name ?? 'B20Nation'}</span>
               <span className="font-mono text-xs text-zinc-500">{symbol ?? 'NAT20'}</span>
             </div>
-            <span
-              className="inline-flex items-center gap-1 rounded-full bg-green-500/10 text-green-500 text-xs font-medium px-2.5 py-1"
-              title="Domain ownership verified"
+            <a
+              href="https://www.talentprotocol.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-full bg-green-500/10 text-green-500 hover:bg-green-500/20 text-xs font-medium px-2.5 py-1 transition-colors"
+              title="Verified on Talent Protocol"
             >
-              <span aria-hidden>✓</span> Verified
-            </span>
+              <span aria-hidden>✓</span> Verified on Talent Protocol
+            </a>
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs px-3 py-1.5">
